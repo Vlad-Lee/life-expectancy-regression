@@ -67,9 +67,9 @@ corr_log_gdp_log_income <- cor(
 )
 ```
 
-The correlation between life expectancy and log GDP per capita is `r round(corr_log_gdp_lex, 3)`, supporting the use of log GDP per capita as the main income measure.
+The correlation between life expectancy and log GDP per capita is `r round(corr_log_gdp_lex, 3)`, indicating a strong positive relationship and supporting the use of log GDP per capita in the model.
 
-GDP per capita and average daily income are also highly correlated (`r round(corr_gdp_income, 3)` using the raw variables and `r round(corr_log_gdp_log_income, 3)` using the log transformed variables), so I exclude average daily income to avoid redundancy.
+GDP per capita and average daily income are highly correlated (`r round(corr_log_gdp_log_income, 3)`), so I exclude average daily income to avoid redundancy.
 
 ```{r income-correlation-plot, fig.width=6, fig.height=4}
 ggplot(df_clean, aes(x = gdp_pcap, y = average_daily_income)) +
@@ -86,7 +86,7 @@ ggplot(df_clean, aes(x = gdp_pcap, y = average_daily_income)) +
 
 ## Regression models
 
-I build the analysis incrementally. The baseline model uses log GDP per capita. The demographic model adds fertility and median age. The inequality model adds the Gini coefficient. The final model excludes median age because it becomes less informative once inequality is included and shows multicollinearity with other predictors.
+I build the analysis incrementally. The baseline model uses log GDP per capita. The demographic model adds fertility and median age. The inequality model adds the Gini coefficient. The final model excludes median age because it becomes less informative once inequality is included and exhibits multicollinearity with other predictors.
 
 ```{r define-models, include=FALSE}
 model_base <- lm(
@@ -128,7 +128,7 @@ anova_inequality_full <- anova(model_demographics, model_inequality_full)
 anova_final_gini <- anova(model_final_without_gini, model_final)
 ```
 
-Adding demographics significantly improves model fit relative to the baseline income model (F = `r round(anova_demographics$F[2], 2)`, p < 0.001). Adding inequality also improves fit in the expanded model (F = `r round(anova_inequality_full$F[2], 2)`, p < 0.001), and the Gini coefficient adds explanatory power in the simplified final specification as well (F = `r round(anova_final_gini$F[2], 2)`, p < 0.001).
+Adding demographics significantly improves model fit relative to the baseline model (F = `r round(anova_demographics$F[2], 2)`, p < 0.001). Inequality also improves fit in both the expanded and final specifications (p < 0.001).
 
 ## Regression summary
 
@@ -160,7 +160,7 @@ modelsummary(
 
 ## Diagnostics
 
-The residuals versus fitted values plot for the final model shows mild curvature but no extreme pattern that would overturn the main interpretation. I keep the results descriptive and use robust standard errors throughout.
+The residuals vs. fitted values plot for the final model shows mild curvature but no strong pattern that would overturn the main interpretation. I interpret the results as descriptive associations and use robust standard errors throughout.
 
 ```{r residuals-vs-fitted, fig.width=6, fig.height=4}
 plot(model_final, which = 1)
@@ -173,11 +173,17 @@ median_age_vif <- vif_values["median_age_years"]
 
 Median age shows moderate multicollinearity in the expanded inequality model (VIF = `r round(median_age_vif, 2)`), which supports excluding it from the final specification.
 
+### Interpretation and Prediction
+
+The model can be used to estimate life expectancy based on a country’s characteristics. For example, a 10% increase in GDP per capita is associated with roughly a 0.5 year increase in life expectancy, holding other factors constant.
+
+More broadly, the model implies that countries with higher income, lower fertility, and lower inequality tend to have higher predicted life expectancy.
+
+This is a cross-sectional analysis, so the results should be interpreted as descriptive associations rather than causal effects.
+
 ## Key takeaways
 
 - GDP per capita is strongly and positively associated with life expectancy.
 - Fertility is negatively associated with life expectancy and adds explanatory power beyond income.
 - Inequality is negatively associated with life expectancy after accounting for income and fertility.
 - Median age is excluded from the final model because it overlaps with other predictors and adds limited independent information.
-
-This is a cross sectional analysis, so the results should be interpreted as descriptive associations rather than causal effects.
