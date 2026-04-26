@@ -88,5 +88,11 @@ View the full analysis here:
 To reproduce the analysis:
 
 1. Run the data preparation script:
-   ```r
+```r
    source("code/combine_data.R")
+```
+2. Knit the analysis file:
+```r
+  code/models.Rmd
+```
+The output report will be generated in output/life_expectancy_analysis.html
