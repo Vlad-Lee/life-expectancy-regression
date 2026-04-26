@@ -13,39 +13,66 @@ How is life expectancy related to GDP per capita, and to what extent do demograp
 ---
 
 ## Data
-The data is sourced from Gapminder and includes country level indicators for 2022. Multiple datasets were merged by country identifiers to construct a single cross sectional dataset.
+The data comes from Gapminder, which compiles global development indicators from sources such as the World Bank.
 
-Key variables:
-- Life expectancy
-- GDP per capita
-- Fertility rate (children per woman)
-- Income inequality (Gini coefficient)
+Source: https://www.gapminder.org/data/
+
+The raw data consists of separate country level indicator files, which are combined into a single 2022 cross sectional dataset.
+
+The processed dataset includes:
+
+- life expectancy  
+- GDP per capita  
+- fertility rate  
+- median age  
+- Gini coefficient  
+- average daily income  
+
+Raw data files are excluded from the repository. The processed dataset is included for reproducibility.
 
 Observations with missing GDP per capita were removed, and all variables are expressed in comparable per person terms where applicable.
 
 ---
 
-## Methodology
-We estimate a series of linear regression models to examine how the relationship evolves as additional variables are introduced.
+## Project Workflow
 
-1. Baseline model  
-   Life expectancy is regressed on log GDP per capita
+1. Combine raw country level indicator files
+2. Create a processed 2022 modeling dataset
+3. Explore relationships between income, demographics, inequality, and life expectancy
+4. Estimate regression models in stages
+5. Compare model fit and interpret results
 
-2. Demographic extension  
-   Adds fertility as a key demographic control
+## Modeling Approach
 
-3. Final model  
-   Incorporates income inequality to capture distributional effects
+I estimate a sequence of OLS regression models:
 
-Robust standard errors are used throughout to account for potential heteroskedasticity.
+1. Baseline model using log GDP per capita
+2. Demographic model adding fertility and median age
+3. Inequality model adding the Gini coefficient
+4. Final model excluding median age due to multicollinearity and limited independent explanatory value
 
----
+Robust standard errors are used to account for potential heteroskedasticity.
 
 ## Key Findings
-- GDP per capita is positively associated with life expectancy, with diminishing returns captured through the log transformation
-- Fertility has a strong negative relationship with life expectancy, reflecting demographic differences across countries
-- Income inequality is negatively associated with life expectancy, even after controlling for income and demographics
 
-Overall, the results suggest that differences in life expectancy reflect not just how wealthy countries are, but also how populations are structured and how resources are distributed.
+- GDP per capita is strongly and positively associated with life expectancy
+- Fertility is negatively associated with life expectancy and adds explanatory power beyond income
+- Income inequality is negatively associated with life expectancy after accounting for income and fertility
+- Median age overlaps with other predictors and is excluded from the final model
 
+Overall, the results suggest that differences in life expectancy are related not just to income levels, but also to demographic structure and how resources are distributed.
+
+## Repository Structure
+
+```text
+code/
+  combine_data.R      # combines raw indicator files
+  models.Rmd          # exploratory analysis and regression models
+
+data/
+  processed/
+    combined_data_2022.csv
+
+output/
+  life_expectancy_analysis.html
 ---
