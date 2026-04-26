@@ -66,22 +66,19 @@ Overall, the results suggest that differences in life expectancy are related not
 
 ```text
 code/
-  combine_data.R      # combines raw indicator files
-  models.Rmd          # exploratory analysis and regression models
+  combine_data.R
+  life_expectancy_analysis.Rmd
+  life_expectancy_analysis.html
 
 data/
   processed/
     combined_data_2022.csv
-
-output/
-  life_expectancy_analysis.html
-
 ```
 ## Report
 
 View the full analysis here:
 
-- [Life Expectancy Analysis](output/life_expectancy_analysis.html)
+- [Life Expectancy Analysis](code/life_expectancy_analysis.html)
 
 ## How to Run
 
@@ -93,7 +90,7 @@ To reproduce the analysis:
 ```
 2. Knit the analysis file:
 ```r
-  code/models.Rmd
+  code/life_expectancy_analysis.Rmd
 ```
 The output report will be generated in:
 ```r
