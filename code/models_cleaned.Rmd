@@ -1,0 +1,183 @@
+---
+title: "Life Expectancy and Economic Development"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+
+library(tidyverse)
+library(lmtest)
+library(sandwich)
+library(modelsummary)
+library(car)
+
+# Load processed dataset created by code/combine_data.R
+df_clean <- readr::read_csv(
+  "../data/processed/combined_data_2022.csv",
+  show_col_types = FALSE
+)
+
+n_countries <- nrow(df_clean)
+missing_gdp <- sum(is.na(df_clean$gdp_pcap))
+missing_lex <- sum(is.na(df_clean$lex))
+```
+
+## Overview
+
+This analysis examines how life expectancy varies across countries based on income, demographics, and inequality. The processed dataset contains `r n_countries` country level observations from 2022, with no missing values for GDP per capita or life expectancy after cleaning.
+
+## Exploratory analysis
+
+GDP per capita is highly skewed, so I use a log transformation in the regression models. The transformed variable is more suitable for modeling because it compresses very high income observations and better reflects diminishing returns to income.
+
+```{r log-gdp-distribution, fig.width=6, fig.height=4}
+ggplot(df_clean, aes(x = log(gdp_pcap))) +
+  geom_histogram(bins = 30) +
+  labs(
+    title = "Distribution of Log GDP per Capita",
+    x = "Log GDP per Capita",
+    y = "Count"
+  )
+```
+
+```{r exploratory-calculations, include=FALSE}
+corr_log_gdp_lex <- cor(
+  log(df_clean$gdp_pcap),
+  df_clean$lex,
+  use = "complete.obs"
+)
+
+corr_gdp_income <- cor(
+  df_clean$gdp_pcap,
+  df_clean$average_daily_income,
+  use = "complete.obs"
+)
+
+corr_log_gdp_log_income <- cor(
+  log(df_clean$gdp_pcap),
+  log(df_clean$average_daily_income),
+  use = "complete.obs"
+)
+```
+
+The correlation between life expectancy and log GDP per capita is `r round(corr_log_gdp_lex, 3)`, supporting the use of log GDP per capita as the main income measure.
+
+GDP per capita and average daily income are also highly correlated (`r round(corr_gdp_income, 3)` using the raw variables and `r round(corr_log_gdp_log_income, 3)` using the log transformed variables), so I exclude average daily income to avoid redundancy.
+
+```{r income-correlation-plot, fig.width=6, fig.height=4}
+ggplot(df_clean, aes(x = gdp_pcap, y = average_daily_income)) +
+  geom_point(alpha = 0.5) +
+  scale_x_log10(labels = scales::comma) +
+  scale_y_log10(labels = scales::comma) +
+  labs(
+    title = "GDP per Capita vs Average Daily Income",
+    subtitle = "Both axes are shown on a log scale",
+    x = "GDP per Capita",
+    y = "Average Daily Income"
+  )
+```
+
+## Regression models
+
+I build the analysis incrementally. The baseline model uses log GDP per capita. The demographic model adds fertility and median age. The inequality model adds the Gini coefficient. The final model excludes median age because it becomes less informative once inequality is included and shows multicollinearity with other predictors.
+
+```{r define-models, include=FALSE}
+model_base <- lm(
+  lex ~ log(gdp_pcap),
+  data = df_clean
+)
+
+model_demographics <- lm(
+  lex ~ log(gdp_pcap) +
+    children_per_woman_total_fertility +
+    median_age_years,
+  data = df_clean
+)
+
+model_inequality_full <- lm(
+  lex ~ log(gdp_pcap) +
+    children_per_woman_total_fertility +
+    median_age_years +
+    gini,
+  data = df_clean
+)
+
+model_final <- lm(
+  lex ~ log(gdp_pcap) +
+    children_per_woman_total_fertility +
+    gini,
+  data = df_clean
+)
+```
+
+```{r model-comparisons, include=FALSE}
+model_final_without_gini <- lm(
+  lex ~ log(gdp_pcap) + children_per_woman_total_fertility,
+  data = df_clean
+)
+
+anova_demographics <- anova(model_base, model_demographics)
+anova_inequality_full <- anova(model_demographics, model_inequality_full)
+anova_final_gini <- anova(model_final_without_gini, model_final)
+```
+
+Adding demographics significantly improves model fit relative to the baseline income model (F = `r round(anova_demographics$F[2], 2)`, p < 0.001). Adding inequality also improves fit in the expanded model (F = `r round(anova_inequality_full$F[2], 2)`, p < 0.001), and the Gini coefficient adds explanatory power in the simplified final specification as well (F = `r round(anova_final_gini$F[2], 2)`, p < 0.001).
+
+## Regression summary
+
+Robust standard errors are used throughout to account for potential heteroskedasticity.
+
+```{r regression-summary}
+modelsummary(
+  list(
+    "Baseline" = model_base,
+    "Demographics" = model_demographics,
+    "Inequality" = model_inequality_full,
+    "Final" = model_final
+  ),
+  vcov = "HC1",
+  stars = TRUE,
+  title = "Regression Models of Life Expectancy",
+  statistic = "({std.error})",
+  gof_omit = "AIC|BIC|Log.Lik|RMSE|F",
+  coef_map = c(
+    "(Intercept)" = "Intercept",
+    "log(gdp_pcap)" = "Log GDP per Capita",
+    "children_per_woman_total_fertility" = "Children per Woman",
+    "median_age_years" = "Median Age",
+    "gini" = "Gini Index"
+  ),
+  notes = "Robust standard errors (HC1) in parentheses."
+)
+```
+
+## Diagnostics
+
+The residuals versus fitted values plot for the final model shows mild curvature but no extreme pattern that would overturn the main interpretation. I keep the results descriptive and use robust standard errors throughout.
+
+```{r residuals-vs-fitted, fig.width=6, fig.height=4}
+plot(model_final, which = 1)
+```
+
+```{r vif-check, include=FALSE}
+vif_values <- vif(model_inequality_full)
+median_age_vif <- vif_values["median_age_years"]
+```
+
+Median age shows moderate multicollinearity in the expanded inequality model (VIF = `r round(median_age_vif, 2)`), which supports excluding it from the final specification.
+
+## Key takeaways
+
+- GDP per capita is strongly and positively associated with life expectancy.
+- Fertility is negatively associated with life expectancy and adds explanatory power beyond income.
+- Inequality is negatively associated with life expectancy after accounting for income and fertility.
+- Median age is excluded from the final model because it overlaps with other predictors and adds limited independent information.
+
+This is a cross sectional analysis, so the results should be interpreted as descriptive associations rather than causal effects.
