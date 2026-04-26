@@ -95,4 +95,7 @@ To reproduce the analysis:
 ```r
   code/models.Rmd
 ```
-The output report will be generated in output/life_expectancy_analysis.html
+The output report will be generated in:
+```r
+  code/life_expectancy_analysis.html
+```
