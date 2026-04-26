@@ -91,3 +91,8 @@ To reproduce the analysis:
 The output report will be generated in:
 
 code/life_expectancy_analysis.html
+
+---
+
+## Author
+Vlad Lee
