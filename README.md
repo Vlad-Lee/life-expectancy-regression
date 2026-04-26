@@ -84,15 +84,10 @@ View the full analysis here:
 
 To reproduce the analysis:
 
-1. Run the data preparation script:
-```r
-   source("code/combine_data.R")
-```
-2. Knit the analysis file:
-```r
-  code/life_expectancy_analysis.Rmd
-```
+1. Open and run `code/combine_data.R` to generate the processed dataset.
+
+2. Open `code/life_expectancy_analysis.Rmd` and click **Knit**.
+
 The output report will be generated in:
-```r
-  code/life_expectancy_analysis.html
-```
+
+code/life_expectancy_analysis.html
