@@ -47,4 +47,8 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
-/data/raw
+
+# Ignore raw data
+/data/raw/
+!data/processed/
+!data/processed/combined_data_2022.csv
