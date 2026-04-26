@@ -76,3 +76,17 @@ data/
 output/
   life_expectancy_analysis.html
 
+```
+## Report
+
+View the full analysis here:
+
+- [Life Expectancy Analysis](output/life_expectancy_analysis.html)
+
+## How to Run
+
+To reproduce the analysis:
+
+1. Run the data preparation script:
+   ```r
+   source("code/combine_data.R")
